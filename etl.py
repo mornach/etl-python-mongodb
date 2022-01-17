@@ -1,19 +1,5 @@
-import csv
-from _ast import Not
-from abc import ABC
-
-from consecution import Node, Pipeline
-
-from mongo_db_connect import db_client, tailor_med_db, patients_collections, treatments_collections
-
-
-class Transform(Node, ABC):
-    def transform(self, row: dict):
-        raise NotImplementedError
-
-    def process(self, row):
-        transformed = self.transform(row)
-        self._push(transformed)
+from core import Transform, Load
+from mongo_db_connect import patients_collections, treatments_collections
 
 
 class Hospital1PatientTransform(Transform):
@@ -39,30 +25,29 @@ class Hospital1PatientTransform(Transform):
         return new_row
 
 
-class Load(Node, ABC):
+class Hospital2PatientTransform(Transform):
 
-    def process(self, row):
-        self.load(row)
-
-    def load(self, row: dict):
+    def transform(self, row: dict):
         raise NotImplementedError
 
 
-class LoadToMongoDb(Load):
+class Hospital1TreatmentTransform(Transform):
+
+    def transform(self, row: dict):
+        raise NotImplementedError
+
+
+class Hospital2TreatmentTransform(Transform):
+
+    def transform(self, row: dict):
+        raise NotImplementedError
+
+
+class LoadPatientToMongoDb(Load):
     def load(self, row):
         patients_collections.insert_one(row)
 
 
-def extract_csv_data(path):
-    with open(path, 'r') as data:
-        reader = csv.DictReader(data)
-        for row in reader:
-            yield row
-
-
-if __name__ == '__main__':
-    hospital_1_patient_pipe = Pipeline(
-        Hospital1PatientTransform('transform') | LoadToMongoDb('load')
-    )
-
-    hospital_1_patient_pipe.consume(extract_csv_data('examples/hospital_1_Patient.csv'))
+class LoadTreatmentToMongoDb(Load):
+    def load(self, row):
+        treatments_collections.insert_one(row)
